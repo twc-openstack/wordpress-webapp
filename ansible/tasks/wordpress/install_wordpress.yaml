@@ -1,0 +1,25 @@
+---
+- name: Update APT cache
+  apt: update_cache=yes
+
+- name: Install base packages
+  apt: pkg={{ item }} state=present
+  with_items:
+    - php5-cli
+    - php5-curl
+    - php5-fpm
+    - php5-gd
+    - php5-mysql
+    - nginx
+
+- name: Start PHP5-FPM service
+  service: name=php5-fpm state=started enabled=true
+
+- name: Disable default site
+  file: path=/etc/nginx/sites-enabled/default state=absent
+
+- name: Add Nginx config
+  template: src=templates/etc/nginx/sites-available/default dest=/etc/nginx/sites-available/{{ site_name }}
+
+- name: Enable site
+  file: src=/etc/nginx/sites-available/{{ site_name }} dest=/etc/nginx/sites-enabled/{{ site_name }} state=link

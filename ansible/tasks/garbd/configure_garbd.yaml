@@ -1,0 +1,5 @@
+---
+- name: Configure garbd
+  template: src=templates/etc/default/garbd
+            dest=/etc/default/garbd
+            mode=0644 owner=root group=root

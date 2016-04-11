@@ -1,0 +1,15 @@
+---
+- name: Install Percona XtraDB Cluster server
+  apt: pkg={{ item }} state=present
+  with_items:
+    - percona-xtradb-cluster-galera-3.x
+    - percona-xtrabackup
+    - percona-xtradb-cluster-common-5.6
+    - percona-xtradb-cluster-client-5.6
+    - percona-xtradb-cluster-server-5.6
+    - xinetd
+    # needed for the ansible mysql module
+    - python-mysqldb 
+
+- name: Setup logging folder
+  file: name=/var/log/mysql recurse=yes state=directory owner=mysql group=adm

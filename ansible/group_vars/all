@@ -1,0 +1,26 @@
+---
+clustercheck_mysql_pass: SEFZHD2kaGLz9uTwG3r3cdW7
+site_name: example.com
+host: wp.example.com
+wp_db_host: db.example.com
+port: 8080
+wp_plugins:
+  - { name: akismet, version: 3.1.10 }
+wp_root: /usr/local/wordpress
+wp_db_name: example_com
+wp_db_user: example_user
+wp_admin_password: changeme
+wp_db_password: changeme
+wp_admin_email: root@example.com
+
+# probably won't need to change anything below here
+wp_admin_user: admin
+wp_cli_bin: /usr/bin/wp
+wp_cli_url: https://raw.github.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+wp_db_import: false
+wp_debug: false
+wp_env: production
+wp_delete_content: false
+wp_lang: en_US
+wp_table_prefix: wp_
+wp_version: 4.4.2

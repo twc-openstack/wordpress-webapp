@@ -1,0 +1,164 @@
+---
+heat_template_version: 2015-10-15
+
+parameters:
+  external_network:
+    type: string
+    description: External network to attach router to.
+    default: Ext-Net
+  key_name:
+    type: string
+    description: Keypair to inject into newly created servers.
+    default: mfisch
+  be_flavor_name:
+    type: string
+    description: Flavor for the DB
+    default: m3.2CPU.4GB
+  fe_flavor_name:
+    type: string
+    description: Flavor for the Front End
+    default: m3.2CPU.4GB
+  image_name:
+    type: string
+    description: Image name for the VM.
+    default: Ubuntu-Server-14.04
+  backend_server_count:
+    type: string
+    description: How many backend servers to setup
+    default: 2
+  frontend_server_count:
+    type: string
+    description: How many front servers to setup
+    default: 2
+  volume_size:
+    type: string
+    description: volume size to make in GB
+    default: 50
+
+resources:
+  router:
+    type: OS::Neutron::Router
+    properties:
+      name:
+        str_replace:
+          template: $stack_name$_router
+          params:
+            $stack_name$: { get_param: "OS::stack_name" }
+      external_gateway_info:
+        network: { get_param: external_network }
+
+  mynet:
+    type: OS::Neutron::Net
+    properties:
+      name:
+        str_replace:
+          template: $stack_name$_net
+          params:
+            $stack_name$: { get_param: "OS::stack_name" }
+
+  wordpress_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: mynet }
+      cidr: 10.10.0.0/24
+      dns_nameservers: [ "8.8.8.8", "8.8.4.4" ]
+
+  frontend_routerinterface:
+    type: OS::Neutron::RouterInterface
+    depends_on: [ wordpress_subnet ]
+    properties:
+      subnet: { get_resource: wordpress_subnet }
+      router: { get_resource: router }
+
+  backend_securitygroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      name: wordpress_backend_securitygroup
+      rules:
+       - remote_ip_prefix: 0.0.0.0/0
+         protocol: tcp
+         port_range_min: 22
+         port_range_max: 22
+       - direction: ingress
+         remote_ip_prefix: 0.0.0.0/0
+         protocol: icmp
+       - remote_ip_prefix: 0.0.0.0/0
+         protocol: tcp
+         port_range_min: 3306
+         port_range_max: 3306
+       - direction: ingress
+         remote_ip_prefix: 0.0.0.0/0
+         protocol: tcp
+         port_range_min: 4567
+         port_range_max: 4567
+       - direction: ingress
+         remote_ip_prefix: 0.0.0.0/0
+         protocol: tcp
+         port_range_min: 4444
+         port_range_max: 4444
+       - remote_ip_prefix: 0.0.0.0/0
+         protocol: tcp
+         port_range_min: 9200
+         port_range_max: 9200
+
+  frontend_securitygroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      name: wordpress_frontend_securitygroup
+      rules:
+       - remote_ip_prefix: 0.0.0.0/0
+         protocol: tcp
+         port_range_min: 22
+         port_range_max: 22
+       # let nginx listen on 8080
+       - remote_ip_prefix: 0.0.0.0/0
+         protocol: tcp
+         port_range_min: 8080
+         port_range_max: 8080
+       - direction: ingress
+         remote_ip_prefix: 0.0.0.0/0
+         protocol: icmp
+
+  backend_nodes:
+    type: OS::Heat::ResourceGroup
+    depends_on:
+      - mynet
+      - wordpress_subnet
+      - backend_securitygroup
+    properties:
+      count: { get_param: backend_server_count }
+      resource_def:
+        type: backend_infra.yaml
+        properties:
+          network_id: { get_resource: mynet }
+          subnet_id: { get_resource: wordpress_subnet }
+          security_group_id: { get_resource: backend_securitygroup }
+
+  frontend_nodes:
+    type: OS::Heat::ResourceGroup
+    depends_on:
+      - mynet
+      - wordpress_subnet
+      - frontend_securitygroup
+    properties:
+      count: { get_param: frontend_server_count }
+      resource_def:
+        type: frontend_infra.yaml
+        properties:
+          network_id: { get_resource: mynet }
+          subnet_id: { get_resource: wordpress_subnet }
+          security_group_id: { get_resource: frontend_securitygroup }
+
+outputs:
+  backend_node_ips:
+    description: list of backend node IP addresses
+    value: { get_attr: [ backend_nodes, server_ip ] }
+  backend_node_names:
+    description: list of backend node names
+    value: { get_attr: [ backend_nodes, server_name ] }
+  frontend_node_ips:
+    description: list of frontend node IP addresses
+    value: { get_attr: [ frontend_nodes, server_ip ] }
+  frontend_node_names:
+    description: list of frontend node names
+    value: { get_attr: [ frontend_nodes, server_name ] }

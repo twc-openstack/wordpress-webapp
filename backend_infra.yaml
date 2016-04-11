@@ -1,0 +1,104 @@
+---
+heat_template_version: 2015-10-15
+
+parameters:
+  key_name:
+    type: string
+    description: Keypair to inject into newly created servers.
+    default: mfisch
+  be_flavor_name:
+    type: string
+    description: Flavor for the DB
+    default: m3.1CPU.2GB
+  image_name:
+    type: string
+    description: Image name for the VM.
+    default: Ubuntu-Server-14.04
+  volume_size:
+    type: string
+    description: volume size to make in GB
+    default: 50
+  network_id:
+    type: string
+    description: ID of the network that the parent template made
+  subnet_id:
+    type: string
+    description: ID of the subnet that the parent template made
+  security_group_id:
+    type: string
+    description: ID of the security group that the parent template made
+
+resources:
+  backend_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: network_id }
+      fixed_ips:
+        - subnet_id: { get_param: subnet_id }
+      security_groups: [{ get_param: security_group_id }]
+
+  fip:
+    type: OS::Neutron::FloatingIP
+    depends_on:
+      - backend_port
+      - backend_server
+    properties:
+      floating_network: Ext-Net
+  fip_assoc:
+    type: OS::Neutron::FloatingIPAssociation
+    properties:
+      floatingip_id: { get_resource: fip }
+      port_id: { get_resource: backend_port }
+
+  backend_server:
+    type: OS::Nova::Server
+    depends_on:
+      - backend_port
+    properties:
+      name:
+        str_replace:
+          template: $stack_name$
+          params:
+            $stack_name$: { get_param: "OS::stack_name" }
+      flavor: { get_param: be_flavor_name }
+      image: { get_param: image_name }
+      key_name: { get_param: key_name }
+      config_drive: true
+      networks:
+      - port: { get_resource: backend_port }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash -v
+            sudo echo $hostname$ > /etc/hostname
+            sudo hostname $hostname$
+            sudo echo "$ip$ $hostname$" >> /etc/hosts
+
+          params:
+            $hostname$: "mysql"
+            $ip$: { get_attr: [ backend_port, fixed_ips, 0, ip_address ] }
+
+  backend_volume:
+    type: OS::Cinder::Volume
+    properties:
+      name: 
+        str_replace:
+          template: $stack_name$_volume
+          params:
+            $stack_name$: { get_param: "OS::stack_name" }
+      size: { get_param: volume_size }
+      volume_type: Standard-HDD
+
+  backend_volume_attachment:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      volume_id: { get_resource: backend_volume }
+      instance_uuid: { get_resource: backend_server }
+      mountpoint: /dev/vdb
+
+outputs:
+  server_ip:
+    value: { get_attr: [ fip, floating_ip_address ] }
+  server_name:
+    value: { get_attr: [ backend_server, name ] }

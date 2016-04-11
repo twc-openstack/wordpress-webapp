@@ -1,0 +1,7 @@
+---
+- name: Bootstrap the mysql/galera
+  command: /usr/bin/bootstrap_mysql.sh
+
+# wait for the service to be up before we continue
+- name: Wait until the service is up before moving on
+  wait_for: port=3306

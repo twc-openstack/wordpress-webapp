@@ -1,0 +1,10 @@
+---
+- name: Remove unused xinetd files
+  file: path={{ item }} 
+       state=absent
+  with_items:
+    - /etc/xinetd.d/chargen
+    - /etc/xinetd.d/daytime
+    - /etc/xinetd.d/discard
+    - /etc/xinetd.d/echo
+    - /etc/xinetd.d/time

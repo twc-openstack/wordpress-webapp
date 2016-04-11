@@ -1,0 +1,18 @@
+---
+- name: Copy and Configure Percona XtraDB Cluster server
+  template: src=templates/etc/mysql/my.cnf.j2
+            dest=/etc/mysql/my.cnf
+            mode=0644 owner=mysql group=root
+
+- name: Copy and Configure clustercheck script
+  template: src=templates/usr/bin/clustercheck.j2
+            dest=/usr/bin/clustercheck
+            owner=root group=root mode=0755
+
+- name: Copy and Configure the bootstrap script
+  template: src=templates/usr/bin/bootstrap_mysql.sh.j2
+            dest=/usr/bin/bootstrap_mysql.sh
+            owner=root group=root mode=0755
+
+- name: Create a /root/.my.cnf
+  template: src=files/root/.my.cnf dest=/root/.my.cnf owner=root group=root mode=0700

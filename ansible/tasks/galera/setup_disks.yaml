@@ -1,0 +1,9 @@
+---
+- name: Setup and mount filesystem
+  filesystem: fstype=ext4 dev=/dev/vdb
+
+- name: Setup mount dir
+  file: path=/var/lib/mysql recurse=yes state=directory
+
+- name: mount /var/lib/mysql
+  mount: name=/var/lib/mysql src=/dev/vdb state=mounted fstype=ext4

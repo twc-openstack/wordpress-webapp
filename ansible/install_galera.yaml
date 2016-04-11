@@ -1,0 +1,20 @@
+---
+- name: Install, Configure, and Bootstrap a galera cluster
+  hosts: galera
+  tasks:
+    - include: tasks/galera/setup_disks.yaml
+    - include: tasks/galera/percona_repo.yaml
+    - include: tasks/galera/install_galera.yaml
+    - include: tasks/galera/cleanup_xinetd.yaml
+    - include: tasks/galera/configure_galera.yaml
+
+- name: Bootstrap the cluster
+  hosts: galera
+  serial: 1
+  tasks:
+    - include: tasks/galera/start_cluster.yaml
+
+- name: Finalize
+  hosts: galera
+  tasks:
+    - include: tasks/galera/grants_and_dbs.yaml

@@ -1,0 +1,83 @@
+---
+heat_template_version: 2015-10-15
+
+parameters:
+  key_name:
+    type: string
+    description: Keypair to inject into newly created servers.
+    default: mfisch
+  fe_flavor_name:
+    type: string
+    description: Flavor for the DB
+    default: m3.1CPU.2GB
+  image_name:
+    type: string
+    description: Image name for the VM.
+    default: Ubuntu-Server-14.04
+  network_id:
+    type: string
+    description: ID of the network that the parent template made
+  subnet_id:
+    type: string
+    description: ID of the subnet that the parent template made
+  security_group_id:
+    type: string
+    description: ID of the security group that the parent template made
+
+resources:
+  frontend_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: network_id }
+      fixed_ips:
+        - subnet_id: { get_param: subnet_id }
+      security_groups: [{ get_param: security_group_id }]
+
+  fip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: Ext-Net
+  fip_assoc:
+    type: OS::Neutron::FloatingIPAssociation
+    depends_on:
+      - frontend_port
+      - frontend_server
+    properties:
+      floatingip_id: { get_resource: fip }
+      port_id: { get_resource: frontend_port }
+
+  frontend_server:
+    type: OS::Nova::Server
+    depends_on:
+      - frontend_port
+    properties:
+      name:
+        str_replace:
+          template: $stack_name$
+          params:
+            $stack_name$: { get_param: "OS::stack_name" }
+      flavor: { get_param: fe_flavor_name }
+      image: { get_param: image_name }
+      key_name: { get_param: key_name }
+      config_drive: true
+      networks:
+        - port: { get_resource: frontend_port }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash -v
+
+            sudo echo $hostname$ > /etc/hostname
+            sudo hostname $hostname$
+            sudo echo "$ip$ $hostname$" >> /etc/hosts
+
+          params:
+            $hostname$: "wordpress"
+            $ip$: { get_attr: [ frontend_port, fixed_ips, 0, ip_address ] }
+
+outputs:
+  server_ip:
+    value: { get_attr: [ fip, floating_ip_address ] }
+  server_name:
+    value: { get_attr: [ frontend_server, name ] }

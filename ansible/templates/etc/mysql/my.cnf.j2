@@ -1,0 +1,34 @@
+[client]
+socket = /var/lib/mysqld/mysqld.sock
+port = 3306
+
+[mysqld]
+datadir = /var/lib/mysql
+socket = /var/lib/mysqld/mysqld.sock
+log-error = /var/log/mysql/error.log
+pid-file = /var/run/mysqld/mysqld.pid
+user = mysql
+binlog_format = ROW
+bind-address = 0.0.0.0
+default_storage_engine = innodb
+innodb_autoinc_lock_mode = 2
+innodb_flush_log_at_trx_commit = 0
+innodb_file_per_table = 1
+innodb_buffer_pool_size = 122M
+innodb_log_file_size = 100M
+wsrep_provider = /usr/lib/libgalera_smm.so
+wsrep_node_address = {{ ansible_ssh_host }}
+wsrep_node_incoming_address = {{ ansible_ssh_host }}
+wsrep_provider_options = "gcache.size=300M; gcache.page_size=300M"
+wsrep_cluster_name = "wordpress_cluster"
+{% set cluster_members = [] -%}
+{%- for node in groups['galera'] %}
+  {%- set _ = cluster_members.append(hostvars[node]['ansible_ssh_host']) -%}
+{% endfor -%}
+wsrep_cluster_address   = gcomm://{{ ",".join(cluster_members) }}
+wsrep_sst_method = xtrabackup-v2
+skip_name_resolve = 1
+
+[mysql_safe]
+log-error = /var/log/mysql/error.log
+pid-file = /var/run/mysqld/mysqld.pid

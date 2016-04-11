@@ -1,0 +1,6 @@
+---
+- name: Install Percona garbd
+  apt: pkg={{ item }} state=present
+  with_items:
+    - ntp
+    - percona-xtradb-cluster-garbd-3.x

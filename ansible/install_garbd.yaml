@@ -1,0 +1,8 @@
+---
+- name: Install, Configure, and start garbd 
+  hosts: garbd
+  tasks:
+    - include: tasks/galera/percona_repo.yaml
+    - include: tasks/garbd/install_garbd.yaml
+    - include: tasks/garbd/configure_garbd.yaml
+    - include: tasks/garbd/start_garbd.yaml

@@ -1,0 +1,15 @@
+---
+- name: Install Wordpress
+  hosts: wordpress
+  tasks:
+    - include: tasks/wordpress/install_wordpress.yaml
+
+# this will bounce nginx, so let's do it serially
+- name: Restart nginx
+  hosts: wordpress
+  serial: 1
+  tasks:
+    - include: tasks/wordpress/restart_nginx.yaml
+
+- name: Configure Wordpress
+    - include: tasks/wordpress/configure_wordpress.yaml
