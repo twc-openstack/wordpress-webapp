@@ -5,3 +5,7 @@
 # wait for the service to be up before we continue
 - name: Wait until the service is up before moving on
   wait_for: port=3306
+
+# need this user setup for replication to work
+- name: mysql user
+  mysql_user: user=mysql host=localhost priv=*.*:ALL state=present password='' login_user=root
