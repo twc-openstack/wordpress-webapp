@@ -11,5 +11,10 @@
   tasks:
     - include: tasks/wordpress/restart_nginx.yaml
 
+# also do this serially so we're not trying to install
+# wordpress db tables on N boxes at once.
 - name: Configure Wordpress
+  hosts: wordpress
+  serial: 1
+  tasks:
     - include: tasks/wordpress/configure_wordpress.yaml
