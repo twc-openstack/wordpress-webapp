@@ -25,11 +25,11 @@ parameters:
   backend_server_count:
     type: string
     description: How many backend servers to setup
-    default: 2
+    default: 3
   frontend_server_count:
     type: string
     description: How many front servers to setup
-    default: 2
+    default: 3
   volume_size:
     type: string
     description: volume size to make in GB

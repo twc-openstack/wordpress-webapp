@@ -39,3 +39,10 @@
 
 - name: Change upload permissions
   file: path={{ wp_root }}/wp-content/uploads mode=775 state=directory recurse=yes
+
+- name: Create user for monitoring
+  command: wp user create {{ wp_monitoring_user }} {{ wp_monitoring_email }}
+    --role=contributor
+    --user_pass={{ wp_monitoring_pass }}
+    --allow-root
+    chdir={{ wp_root }}

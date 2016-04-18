@@ -1,12 +1,12 @@
 ---
 - name: Install Wordpress
-  hosts: wordpress
+  hosts: wordpress_*
   tasks:
     - include: tasks/wordpress/install_wordpress.yaml
 
 # this will bounce nginx, so let's do it serially
 - name: Restart nginx
-  hosts: wordpress
+  hosts: wordpress_*
   serial: 1
   tasks:
     - include: tasks/wordpress/restart_nginx.yaml
@@ -14,7 +14,7 @@
 # also do this serially so we're not trying to install
 # wordpress db tables on N boxes at once.
 - name: Configure Wordpress
-  hosts: wordpress
+  hosts: wordpress_*
   serial: 1
   tasks:
     - include: tasks/wordpress/configure_wordpress.yaml
