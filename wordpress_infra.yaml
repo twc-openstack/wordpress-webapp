@@ -119,12 +119,23 @@ resources:
          remote_ip_prefix: 0.0.0.0/0
          protocol: icmp
 
+  backend_server_group:
+    type: OS::Nova::ServerGroup
+    properties:
+      name: backend_anti_affinity
+
+  frontend_server_group:
+    type: OS::Nova::ServerGroup
+    properties:
+      name: frontend_anti_affinity
+
   backend_nodes:
     type: OS::Heat::ResourceGroup
     depends_on:
       - mynet
       - wordpress_subnet
       - backend_securitygroup
+      - backend_server_group
     properties:
       count: { get_param: backend_server_count }
       resource_def:
@@ -133,6 +144,7 @@ resources:
           network_id: { get_resource: mynet }
           subnet_id: { get_resource: wordpress_subnet }
           security_group_id: { get_resource: backend_securitygroup }
+          server_group_id: { get_resource: backend_server_group }
 
   frontend_nodes:
     type: OS::Heat::ResourceGroup
@@ -140,6 +152,7 @@ resources:
       - mynet
       - wordpress_subnet
       - frontend_securitygroup
+      - frontend_server_group
     properties:
       count: { get_param: frontend_server_count }
       resource_def:
@@ -148,6 +161,7 @@ resources:
           network_id: { get_resource: mynet }
           subnet_id: { get_resource: wordpress_subnet }
           security_group_id: { get_resource: frontend_securitygroup }
+          server_group_id: { get_resource: frontend_server_group }
 
 outputs:
   backend_node_ips:
