@@ -46,3 +46,4 @@
     --user_pass={{ wp_monitoring_pass }}
     --allow-root
     chdir={{ wp_root }}
+  ignore_errors: yes
