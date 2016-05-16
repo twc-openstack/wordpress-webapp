@@ -46,6 +46,7 @@ resources:
             $stack_name$: { get_param: "OS::stack_name" }
       external_gateway_info:
         network: { get_param: external_network }
+      ha: true
 
   mynet:
     type: OS::Neutron::Net
